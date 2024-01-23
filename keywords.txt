@@ -1,0 +1,28 @@
+#######################################
+
+# Syntax Coloring Map For AD79015
+
+#######################################
+
+# Class (KEYWORD1)
+
+#######################################
+
+
+
+AD75019                 KEYWORD1
+
+
+#######################################
+
+# Methods and Functions (KEYWORD2)
+
+#######################################
+
+
+begin     		KEYWORD2
+clear     		KEYWORD2
+connect   		KEYWORD2
+flush     		KEYWORD2
+isConnected 	KEYWORD2
+print	  		KEYWORD2
