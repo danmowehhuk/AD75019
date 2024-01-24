@@ -59,5 +59,9 @@ PCB layout considerations may require X and Y pins to be used non-sequentially,
 while your code would prefer sequential numbers. You can provide `xMapping` and
 `yMapping` arrays to let the library take care of this remapping for you.
 
+**NOTE:** The remapping arrays must be 16 elements in size, with values between
+0-15, and without repeats. If a remapping array is invalid, the `begin(xMapping, yMapping)`
+method will return `false` and calling `flush()` will be disabled.
+
 See the [remapping example](examples/remapped/remapped.ino) example for more 
 details.
