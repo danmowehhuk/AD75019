@@ -10,7 +10,7 @@
 
 
 
-AD75019                 KEYWORD1
+AD75019         KEYWORD1
 
 
 #######################################
@@ -20,9 +20,9 @@ AD75019                 KEYWORD1
 #######################################
 
 
-begin     		KEYWORD2
-clear     		KEYWORD2
-connect   		KEYWORD2
-flush     		KEYWORD2
-isConnected 	KEYWORD2
-print	  		KEYWORD2
+begin           KEYWORD2
+clear           KEYWORD2
+addRoute        KEYWORD2
+flush           KEYWORD2
+isRouted        KEYWORD2
+print           KEYWORD2

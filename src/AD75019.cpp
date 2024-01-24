@@ -21,81 +21,87 @@ void _ad75019_digitalWriteDefault(uint8_t pinNumber, uint8_t value) {
 }
 
 AD75019::AD75019(uint8_t pclkPinNumber, uint8_t sclkPinNumber, uint8_t sinPinNumber):
-  pclkPinNumber(pclkPinNumber), sclkPinNumber(sclkPinNumber), sinPinNumber(sinPinNumber),
-  pinModeCallback(_ad75019_pinModeDefault), digitalWriteCallback(_ad75019_digitalWriteDefault) {}
+  _pclkPinNumber(pclkPinNumber), _sclkPinNumber(sclkPinNumber), _sinPinNumber(sinPinNumber),
+  _pinModeCallback(_ad75019_pinModeDefault), _digitalWriteCallback(_ad75019_digitalWriteDefault) {}
 
 AD75019::AD75019(uint8_t pclkPinNumber, uint8_t sclkPinNumber, uint8_t sinPinNumber, 
           voidFuncCallback_t pinModeCallback, voidFuncCallback_t digitalWriteCallback):
-  pclkPinNumber(pclkPinNumber), sclkPinNumber(sclkPinNumber), sinPinNumber(sinPinNumber),
-  pinModeCallback(pinModeCallback), digitalWriteCallback(digitalWriteCallback) {}
+  _pclkPinNumber(pclkPinNumber), _sclkPinNumber(sclkPinNumber), _sinPinNumber(sinPinNumber),
+  _pinModeCallback(pinModeCallback), _digitalWriteCallback(digitalWriteCallback) {}
 
 
-void AD75019::begin() {
-    pinModeCallback(pclkPinNumber, OUTPUT);
-    pinModeCallback(sclkPinNumber, OUTPUT);
-    pinModeCallback(sinPinNumber, OUTPUT);
-    digitalWriteCallback(pclkPinNumber, HIGH);
-    digitalWriteCallback(sclkPinNumber, LOW);
-    digitalWriteCallback(sinPinNumber, LOW);
+bool AD75019::begin() {
+    _pinModeCallback(_pclkPinNumber, OUTPUT);
+    _pinModeCallback(_sclkPinNumber, OUTPUT);
+    _pinModeCallback(_sinPinNumber, OUTPUT);
+    _digitalWriteCallback(_pclkPinNumber, HIGH);
+    _digitalWriteCallback(_sclkPinNumber, LOW);
+    _digitalWriteCallback(_sinPinNumber, LOW);
+    _begun = true;
+    return true;
 }
 
-void AD75019::begin(uint8_t newXPinMapping[16], uint8_t newYPinMapping[16]) {
-  begin();
-
+bool AD75019::begin(uint8_t xPinMapping[16], uint8_t yPinMapping[16]) {
   // validate pin mapping arrays
   uint16_t used = 0;
   for (uint8_t i = 0; i < 16; i++) {
-    if (newXPinMapping[i] > 15 || bitRead(used, newXPinMapping[i])) {
+    if (xPinMapping[i] > 15 || bitRead(used, xPinMapping[i])) {
       // invalid mapping
-      while(1) {}
+      return false;
     } else {
-      xPinMapping[i] = newXPinMapping[i];
-      bitWrite(used, newXPinMapping[i], 1);
+      _xPinMapping[i] = xPinMapping[i];
+      bitWrite(used, xPinMapping[i], 1);
     }
   }
 
   used = 0;
   for (uint8_t i = 0; i < 16; i++) {
-    if (newYPinMapping[i] > 15 || bitRead(used, newYPinMapping[i])) {
+    if (yPinMapping[i] > 15 || bitRead(used, yPinMapping[i])) {
       // invalid mapping
-      while(1) {}
+      return false;
     } else {
-      yPinMapping[i] = newYPinMapping[i];
-      bitWrite(used, newYPinMapping[i], 1);
+      _yPinMapping[i] = yPinMapping[i];
+      bitWrite(used, yPinMapping[i], 1);
     }
   }
+
+  return begin();
 }
 
-void AD75019::connect(uint8_t x, uint8_t y) {
+void AD75019::addRoute(uint8_t x, uint8_t y) {
   bitWrite(
-    configBuffer[yPinMapping[y]],
-    xPinMapping[x], 1);
+    _configBuffer[_yPinMapping[y]],
+    _xPinMapping[x], 1);
 }
 
-bool AD75019::isConnected(uint8_t x, uint8_t y) {
+bool AD75019::isRouted(uint8_t x, uint8_t y) {
   return bitRead(
-    configBuffer[yPinMapping[y]],
-    xPinMapping[x]);
+    _configBuffer[_yPinMapping[y]],
+    _xPinMapping[x]);
 }
 
 void AD75019::flush() {
+	if (!_begun) return;
   for (int8_t y = 15; y > -1; y--) {
     for (int8_t x = 15; x > -1; x--) {
-      digitalWriteCallback(sinPinNumber,
-        bitRead(configBuffer[y], x));
-      digitalWriteCallback(sclkPinNumber, HIGH);
-      digitalWriteCallback(sclkPinNumber, LOW);
+      _digitalWriteCallback(_sinPinNumber,
+        bitRead(_configBuffer[y], x));
+      _digitalWriteCallback(_sclkPinNumber, HIGH);
+      _digitalWriteCallback(_sclkPinNumber, LOW);
     }
   }
-  digitalWriteCallback(pclkPinNumber, LOW);
-  digitalWriteCallback(pclkPinNumber, HIGH);
+  _digitalWriteCallback(_pclkPinNumber, LOW);
+  _digitalWriteCallback(_pclkPinNumber, HIGH);
 }
 
 void AD75019::clear() {
-  memset(configBuffer, 0, 16);
+  memset(_configBuffer, 0, 16);
 }
 
 void AD75019::print() {
+	if (!_begun) {
+    Serial.println(F("AD75019 not initialized!"));
+  }
   Serial.println(F("  X: 5432 1098 7654 3210"));
   for (int8_t y = 15; y > -1; y--) {
     if (y > 9) {
@@ -108,7 +114,7 @@ void AD75019::print() {
       Serial.print(F(": "));
     }
     for (int8_t x = 15; x > -1; x--) {
-      Serial.print(bitRead(configBuffer[y], x));
+      Serial.print(bitRead(_configBuffer[y], x));
       if (x % 4 == 0) {
         Serial.print(F(" "));
       }

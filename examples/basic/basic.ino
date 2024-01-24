@@ -6,14 +6,20 @@ void setup() {
 
   AD75019 cpSwitch(5, 6, 7);
 
-  cpSwitch.begin();
+  // Initialize the AD75019
+  if (!cpSwitch.begin()) {
+    Serial.println("AD75019 initialization failed");
+    while(1);
+  }
 
-  cpSwitch.connect(0, 4);
-  cpSwitch.connect(4, 3);
-  cpSwitch.connect(3, 2);
-  cpSwitch.connect(2, 1);
-  cpSwitch.connect(1, 0);
+  // Configure routes
+  cpSwitch.addRoute(0, 4);
+  cpSwitch.addRoute(4, 3);
+  cpSwitch.addRoute(3, 2);
+  cpSwitch.addRoute(2, 1);
+  cpSwitch.addRoute(1, 0);
 
+  // Send the route configuration to the AD75019
   cpSwitch.flush();
 
   cpSwitch.print();

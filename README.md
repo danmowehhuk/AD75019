@@ -23,12 +23,22 @@ to LOW.
 AD75019 xptSwitch(5, 6, 7);
 
 void setup() {
-  xptSwitch.begin();
-  xptSwitch.connect(0, 3); // X0 to Y3
-  xptSwitch.connect(3, 4); // X3 to Y4
+  Serial.begin(9600);
+  while (!Serial);
+
+  // Initialize the AD75019
+  if (!xptSwitch.begin()) {
+    Serial.println("AD75019 initialization failed")
+    while(1);
+  }
+
+  // Configure routes
+  xptSwitch.addRoute(0, 3); // X0 to Y3
+  xptSwitch.addRoute(3, 4); // X3 to Y4
   // all other crosspoints left unconnected
 
-  xptSwitch.flush(); // Push to the chip
+  // Send the route configuration to the AD75019
+  xptSwitch.flush();
 }
 ```
 
