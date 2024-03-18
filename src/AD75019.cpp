@@ -95,7 +95,9 @@ void AD75019::flush() {
 }
 
 void AD75019::clear() {
-  memset(_configBuffer, 0, 16);
+  for (uint8_t i = 0; i < 16; i++) {
+    _configBuffer[i] = 0;
+  }
 }
 
 void AD75019::print() {
