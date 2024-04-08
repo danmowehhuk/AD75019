@@ -95,10 +95,18 @@ class AD75019 {
     // Disable copy constructor since copies would reference the same physical pins
     AD75019(AD75019 &t);
 
+    // Functions using the _state bit vector
+    void setBegun(bool b);
+    bool isBegun();
+    void setUseDefaultCallbacks(bool b);
+    bool isUseDefaultCallbacks();
+
     uint8_t _pclkPinNumber;
     uint8_t _sclkPinNumber;
     uint8_t _sinPinNumber;
-    uint8_t _begun = false;
+
+    // 000000 | isBegun | isUseDefaultCallbacks
+    uint8_t _state = 0;
 
     voidFuncCallback_t _pinModeCallback = NULL;
     voidFuncCallback_t _digitalWriteCallback = NULL;

@@ -22,7 +22,9 @@ void _ad75019_digitalWriteDefault(uint8_t pinNumber, uint8_t value) {
 
 AD75019::AD75019(uint8_t pclkPinNumber, uint8_t sclkPinNumber, uint8_t sinPinNumber):
   _pclkPinNumber(pclkPinNumber), _sclkPinNumber(sclkPinNumber), _sinPinNumber(sinPinNumber),
-  _pinModeCallback(_ad75019_pinModeDefault), _digitalWriteCallback(_ad75019_digitalWriteDefault) {}
+  _pinModeCallback(_ad75019_pinModeDefault), _digitalWriteCallback(_ad75019_digitalWriteDefault) {
+    setUseDefaultCallbacks(true);
+ }
 
 AD75019::AD75019(uint8_t pclkPinNumber, uint8_t sclkPinNumber, uint8_t sinPinNumber, 
           voidFuncCallback_t pinModeCallback, voidFuncCallback_t digitalWriteCallback):
@@ -37,7 +39,7 @@ bool AD75019::begin() {
     _digitalWriteCallback(_pclkPinNumber, HIGH);
     _digitalWriteCallback(_sclkPinNumber, LOW);
     _digitalWriteCallback(_sinPinNumber, LOW);
-    _begun = true;
+    setBegun(true);
     return true;
 }
 
@@ -81,7 +83,7 @@ bool AD75019::isRouted(uint8_t x, uint8_t y) {
 }
 
 void AD75019::flush() {
-	if (!_begun) return;
+	if (!isBegun()) return;
   for (int8_t y = 15; y > -1; y--) {
     for (int8_t x = 15; x > -1; x--) {
       _digitalWriteCallback(_sinPinNumber,
@@ -101,7 +103,7 @@ void AD75019::clear() {
 }
 
 void AD75019::print() {
-	if (!_begun) {
+	if (!isBegun()) {
     Serial.println(F("AD75019 not initialized!"));
   }
   Serial.println(F("  X: 5432 1098 7654 3210"));
@@ -124,3 +126,20 @@ void AD75019::print() {
     Serial.println();
   }
 }
+
+void AD75019::setBegun(bool b) {
+	bitWrite(_state, 1, b);
+}
+
+bool AD75019::isBegun() {
+	return bitRead(_state, 1);
+}
+
+void AD75019::setUseDefaultCallbacks(bool b) {
+	bitWrite(_state, 0, b);
+}
+
+bool AD75019::isUseDefaultCallbacks() {
+	return bitRead(_state, 0);
+}
+
