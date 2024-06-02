@@ -12,7 +12,7 @@
 #include <Arduino.h>
 #include "AD75019.h"
 
-void _ad75019_pinModeDefault(uint8_t pinNumber) {
+void _ad75019_pinModeDefault(uint8_t pinNumber, uint8_t /* unused */) {
   pinMode(pinNumber, OUTPUT);
 }
 
