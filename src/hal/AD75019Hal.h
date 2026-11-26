@@ -32,21 +32,24 @@ inline void println() { Serial.println(); }
 
 #else
 
+#include <BareMetalHAL.h>
+
 namespace AD75019Hal {
 
-class FlashStr;
+using FlashStr = BareMetalHAL::FlashStr;
 
-extern const uint8_t PIN_OUTPUT;
-extern const uint8_t PIN_HIGH;
-extern const uint8_t PIN_LOW;
+const uint8_t PIN_OUTPUT = BareMetalHAL::OUTPUT;
+const uint8_t PIN_HIGH = BareMetalHAL::HIGH;
+const uint8_t PIN_LOW = BareMetalHAL::LOW;
 
-void pinModeOutput(uint8_t pin);
-void writePin(uint8_t pin, uint8_t value);
+inline void pinModeOutput(uint8_t pin) { BareMetalHAL::pinMode(pin, BareMetalHAL::OUTPUT); }
+inline void writePin(uint8_t pin, uint8_t value) { BareMetalHAL::digitalWrite(pin, value); }
 
-void print(const FlashStr* s);
-void print(int value);
-void println(const FlashStr* s);
-void println();
+// UART0, which the caller begins (BareMetalHAL::Uart0::begin()).
+inline void print(const FlashStr* s) { BareMetalHAL::Uart0::print(s); }
+inline void print(int value) { BareMetalHAL::Uart0::print(value); }
+inline void println(const FlashStr* s) { BareMetalHAL::Uart0::println(s); }
+inline void println() { BareMetalHAL::Uart0::println(""); }
 
 }
 

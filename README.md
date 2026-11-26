@@ -68,3 +68,25 @@ method will return `false` and calling `flush()` will be disabled.
 
 See the [remapping example](examples/remapped/remapped.ino) example for more 
 details.
+
+
+## Without Arduino
+
+Built with `-DNO_ARDUINO -DHAL_AVR`, the library drives its pins and prints
+through [BareMetalHAL](https://github.com/danmowehhuk/BareMetalHAL) instead
+of the Arduino core. Pins are then `BareMetalHAL::pin(Port, bit)` values
+rather than Arduino pin numbers, and `print()` writes to UART0, which the
+caller begins first (`BareMetalHAL::Uart0::begin()`).
+
+```c
+#include <BareMetalHAL.h>
+#include <AD75019.h>
+
+using namespace BareMetalHAL;
+
+AD75019 xptSwitch(pin(Port::B, 4), pin(Port::B, 5), pin(Port::B, 6));
+```
+
+The bare-metal tests are in [test/test-suite-avr](test/test-suite-avr); build
+them with `./build.sh` (`-s` for SimulIDE) and run them with
+[test/AD75019Test.sim2](test/AD75019Test.sim2).
