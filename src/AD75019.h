@@ -14,6 +14,7 @@
 
 #include <stddef.h>
 #include <stdint.h>
+#include "AD75019Routing.h"
 
 class AD75019 {
 
@@ -53,14 +54,15 @@ class AD75019 {
     bool begin();
 
     /*
-     * Sets the pinModes and initializes using a custom X and Y pin mappings.
-     * Returns true if successful.
+     * Sets the pinModes and initializes using a custom X and Y pin mappings,
+     * which every AD75019Routing then uses too (see
+     * AD75019Routing::setPinMapping()). Returns true if successful.
      *
      * xPinMapping, yPinMapping - 16-element arrays with element values 
      *    between 0-15 containing no repeated values. The array elements
      *    correspond to the actual X and Y pins on the AD75019.
      */
-    bool begin(uint8_t xPinMapping[16], uint8_t yPinMapping[16]);
+    bool begin(const uint8_t xPinMapping[16], const uint8_t yPinMapping[16]);
 
     /*
      * Update the configuration buffer adding a route between the specified X 
@@ -84,6 +86,14 @@ class AD75019 {
      * Sends the contents of the configuration buffer to the AD75019's shift registers
      */
     void flush();
+
+    /*
+     * Replaces the configuration buffer with a routing, then sends it;
+     * before begin(), only replaces it
+     *
+     * routing - the routing, built with the current pin mapping
+     */
+    void flush(const AD75019Routing& routing);
 
     /*
      * Resets the configuration buffer to all zeros (no connections)
@@ -121,11 +131,8 @@ class AD75019 {
     voidFuncCallback_t _pinModeCallback = NULL;
     voidFuncCallback_t _digitalWriteCallback = NULL;
     
-    uint8_t _xPinMapping[16] = {0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15};
-    uint8_t _yPinMapping[16] = {0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15};
-
-    // Y is the array index, X is the bit position (0 on the right)
-    uint16_t _configBuffer[16] = {0};
+    // The configuration buffer, with the pin mapping
+    AD75019Routing _routing;
 
 };
 

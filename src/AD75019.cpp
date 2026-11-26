@@ -72,63 +72,46 @@ bool AD75019::begin() {
     return true;
 }
 
-bool AD75019::begin(uint8_t xPinMapping[16], uint8_t yPinMapping[16]) {
-  // validate pin mapping arrays
-  uint16_t used = 0;
-  for (uint8_t i = 0; i < 16; i++) {
-    if (xPinMapping[i] > 15 || readBit(used, xPinMapping[i])) {
-      // invalid mapping
-      return false;
-    } else {
-      _xPinMapping[i] = xPinMapping[i];
-      writeBit(used, xPinMapping[i], 1);
-    }
+bool AD75019::begin(const uint8_t xPinMapping[16], const uint8_t yPinMapping[16]) {
+  bool begun = AD75019Routing::setPinMapping(xPinMapping, yPinMapping);
+  if (begun) {
+    begun = begin();
   }
-
-  used = 0;
-  for (uint8_t i = 0; i < 16; i++) {
-    if (yPinMapping[i] > 15 || readBit(used, yPinMapping[i])) {
-      // invalid mapping
-      return false;
-    } else {
-      _yPinMapping[i] = yPinMapping[i];
-      writeBit(used, yPinMapping[i], 1);
-    }
-  }
-
-  return begin();
+  return begun;
 }
 
 void AD75019::addRoute(uint8_t x, uint8_t y) {
-  writeBit(
-    _configBuffer[_yPinMapping[y]],
-    _xPinMapping[x], 1);
+  _routing.addRoute(x, y);
 }
 
 bool AD75019::isRouted(uint8_t x, uint8_t y) {
-  return readBit(
-    _configBuffer[_yPinMapping[y]],
-    _xPinMapping[x]);
+  return _routing.isRouted(x, y);
 }
 
 void AD75019::flush() {
-	if (!isBegun()) return;
-  for (int8_t y = 15; y > -1; y--) {
-    for (int8_t x = 15; x > -1; x--) {
-      _digitalWriteCallback(_sinPinNumber,
-        readBit(_configBuffer[y], x));
-      _digitalWriteCallback(_sclkPinNumber, PIN_HIGH);
-      _digitalWriteCallback(_sclkPinNumber, PIN_LOW);
+  if (isBegun()) {
+    // Y15 to Y0, each X15 to X0, as AD75019Routing's bytes are ordered
+    for (int8_t y = AD75019Routing::PINS - 1; y > -1; y--) {
+      uint16_t row = _routing._rows[y];
+      for (uint8_t x = 0; x < AD75019Routing::PINS; x++) {
+        _digitalWriteCallback(_sinPinNumber, (row & 0x8000) ? PIN_HIGH : PIN_LOW);
+        _digitalWriteCallback(_sclkPinNumber, PIN_HIGH);
+        _digitalWriteCallback(_sclkPinNumber, PIN_LOW);
+        row <<= 1;
+      }
     }
+    _digitalWriteCallback(_pclkPinNumber, PIN_LOW);
+    _digitalWriteCallback(_pclkPinNumber, PIN_HIGH);
   }
-  _digitalWriteCallback(_pclkPinNumber, PIN_LOW);
-  _digitalWriteCallback(_pclkPinNumber, PIN_HIGH);
+}
+
+void AD75019::flush(const AD75019Routing& routing) {
+  _routing = routing;
+  flush();
 }
 
 void AD75019::clear() {
-  for (uint8_t i = 0; i < 16; i++) {
-    _configBuffer[i] = 0;
-  }
+  _routing.clear();
 }
 
 #ifndef NO_ARDUINO
@@ -148,7 +131,7 @@ void AD75019::print() {
       Serial.print(F(": "));
     }
     for (int8_t x = 15; x > -1; x--) {
-      Serial.print(readBit(_configBuffer[y], x));
+      Serial.print(readBit(_routing._rows[y], x));
       if (x % 4 == 0) {
         Serial.print(F(" "));
       }

@@ -70,6 +70,25 @@ See the [remapping example](examples/remapped/remapped.ino) example for more
 details.
 
 
+## Building Routings Ahead of Time
+
+`AD75019Routing` builds a configuration without the chip, so it can be worked
+out ahead of time and kept. It holds only the 256 crosspoint bits (32 bytes),
+and `flush(routing)` sends one, after which `addRoute()` and `isRouted()` work
+on its routes.
+
+```c
+AD75019Routing routing;
+routing.addRoute(0, 3);
+routing.addRoute(3, 4);
+
+xptSwitch.flush(routing);  // send it when needed
+```
+
+Every routing shares one pin mapping, set by `begin(xMapping, yMapping)` or
+`AD75019Routing::setPinMapping()`, so a program drives one board's wiring.
+
+
 ## Without Arduino
 
 Built with `-DNO_ARDUINO`, the library needs nothing from the Arduino core or
