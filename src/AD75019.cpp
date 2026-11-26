@@ -73,7 +73,7 @@ bool AD75019::begin() {
 }
 
 bool AD75019::begin(const uint8_t xPinMapping[16], const uint8_t yPinMapping[16]) {
-  bool begun = _routing.setPinMapping(xPinMapping, yPinMapping);
+  bool begun = AD75019Routing::setPinMapping(xPinMapping, yPinMapping);
   if (begun) {
     begun = begin();
   }
@@ -105,19 +105,9 @@ void AD75019::flush() {
   }
 }
 
-void AD75019::flush(const uint8_t bytes[AD75019Routing::BYTES]) {
-  _routing.setBytes(bytes);
+void AD75019::flush(const AD75019Routing& routing) {
+  _routing = routing;
   flush();
-}
-
-void AD75019::getBytes(uint8_t bytes[AD75019Routing::BYTES]) const {
-  _routing.getBytes(bytes);
-}
-
-AD75019Routing AD75019::newRouting() const {
-  AD75019Routing routing = _routing;
-  routing.clear();
-  return routing;
 }
 
 void AD75019::clear() {

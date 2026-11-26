@@ -27,9 +27,6 @@ addRoute        KEYWORD2
 flush           KEYWORD2
 isRouted        KEYWORD2
 print           KEYWORD2
-getBytes        KEYWORD2
-setBytes        KEYWORD2
-newRouting      KEYWORD2
 setPinMapping   KEYWORD2
 
 
@@ -40,5 +37,4 @@ setPinMapping   KEYWORD2
 #######################################
 
 
-BYTES           LITERAL1
 PINS            LITERAL1

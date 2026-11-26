@@ -163,136 +163,98 @@ void testBadMappingsRefused(TestInvocation* t) {
   t->verify(!cpSwitch.begin(ok, outOfRange), F("an out-of-range Y pin should be refused"));
 }
 
-// Whether the recorded stream is exactly these bytes, most significant
-// bit first.
-bool streamIs(const uint8_t bytes[AD75019Routing::BYTES]) {
-  bool same = clocks == 256;
-  for (uint16_t i = 0; same && i < 256; i++) {
-    same = stream[i] == (((bytes[i / 8] >> (7 - i % 8)) & 0x01) != 0);
-  }
-  return same;
+uint8_t IDENTITY[16] = {0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15};
+
+// The pin mapping is shared by every routing, so each test starts unmapped.
+void before() {
+  AD75019Routing::setPinMapping(IDENTITY, IDENTITY);
 }
 
-void testRoutingBytesInSendOrder(TestInvocation* t) {
-  t->setName(F("A routing's bytes are in send order"));
-  AD75019Routing routing;
-  routing.addRoute(15, 15);
-  routing.addRoute(0, 4);
-  uint8_t bytes[AD75019Routing::BYTES];
-  routing.getBytes(bytes);
-  t->verify(bytes[0] == 0x80, F("X15-Y15 should be byte 0's top bit"));
-  t->verify(bytes[23] == 0x01, F("X0-Y4 should be byte 23's bottom bit"));
-  uint8_t others = 0;
-  for (uint8_t i = 0; i < AD75019Routing::BYTES; i++) {
-    if (i != 0 && i != 23 && bytes[i]) {
-      others++;
-    }
-  }
-  t->verify(others == 0, F("no other bits should be set"));
+void testRoutingIsCompact(TestInvocation* t) {
+  t->setName(F("A routing is just its 256 bits"));
+  t->verify(sizeof(AD75019Routing) == 32, F("expected 32 bytes"));
 }
 
-void testRoutingBytesRoundTrip(TestInvocation* t) {
-  t->setName(F("setBytes() loads what getBytes() gave"));
-  AD75019Routing routing;
-  routing.addRoute(3, 9);
-  routing.addRoute(12, 1);
-  uint8_t bytes[AD75019Routing::BYTES];
-  routing.getBytes(bytes);
-  AD75019Routing loaded;
-  loaded.addRoute(5, 5);
-  loaded.setBytes(bytes);
-  t->verify(loaded.isRouted(3, 9) && loaded.isRouted(12, 1), F("the routes should load"));
-  t->verify(!loaded.isRouted(5, 5), F("the old route should be replaced"));
-}
-
-void testRoutingIgnoresBadPins(TestInvocation* t) {
-  t->setName(F("A routing ignores pins above 15"));
-  AD75019Routing routing;
-  routing.addRoute(16, 0);
-  routing.addRoute(0, 16);
-  uint8_t bytes[AD75019Routing::BYTES];
-  routing.getBytes(bytes);
-  uint8_t set = 0;
-  for (uint8_t i = 0; i < AD75019Routing::BYTES; i++) {
-    set |= bytes[i];
-  }
-  t->verify(set == 0, F("nothing should be routed"));
-  t->verify(!routing.isRouted(16, 0), F("isRouted() should be false"));
-}
-
-void testBadMappingChangesNothing(TestInvocation* t) {
-  t->setName(F("A refused mapping keeps the old one"));
-  uint8_t ok[16] = {15, 14, 13, 12, 11, 10, 9, 8, 7, 6, 5, 4, 3, 2, 1, 0};
-  uint8_t repeated[16] = {0, 0, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15};
-  AD75019Routing routing;
-  t->verify(!routing.setPinMapping(ok, repeated), F("the mapping should be refused"));
-  routing.addRoute(0, 0);
-  uint8_t bytes[AD75019Routing::BYTES];
-  routing.getBytes(bytes);
-  t->verify(bytes[31] == 0x01, F("X0-Y0 should stay unmapped"));
-}
-
-void testFlushSendsBytes(TestInvocation* t) {
-  t->setName(F("flush(bytes) sends those bytes and keeps them"));
+void testFlushSendsRouting(TestInvocation* t) {
+  t->setName(F("flush(routing) sends it and keeps it"));
   AD75019 cpSwitch(PCLK, SCLK, SIN, recordPinMode, recordWrite);
   cpSwitch.begin();
   cpSwitch.addRoute(7, 7);
   AD75019Routing routing;
+  routing.addRoute(15, 15);
   routing.addRoute(2, 11);
-  routing.addRoute(9, 0);
-  uint8_t bytes[AD75019Routing::BYTES];
-  routing.getBytes(bytes);
   resetRecording();
-  cpSwitch.flush(bytes);
-  t->verify(streamIs(bytes), F("the stream should be the bytes"));
-  t->verify(latches == 1, F("expected one latch"));
-  t->verify(cpSwitch.isRouted(2, 11) && cpSwitch.isRouted(9, 0), F("the routes should be kept"));
+  cpSwitch.flush(routing);
+  t->verify(clocks == 256 && latches == 1, F("expected 256 clocks and one latch"));
+  t->verify(stream[0], F("X15-Y15 should be sent first"));
+  t->verify(stream[streamIndex(2, 11)], F("X2-Y11 should be set"));
+  t->verify(countSet() == 2, F("only the routing's bits should be set"));
+  t->verify(cpSwitch.isRouted(2, 11), F("the switch should keep the routing"));
   t->verify(!cpSwitch.isRouted(7, 7), F("the old route should be replaced"));
 }
 
-void testFlushBytesBeforeBeginOnlyLoads(TestInvocation* t) {
-  t->setName(F("flush(bytes) before begin() only loads them"));
+void testFlushRoutingBeforeBeginOnlyLoads(TestInvocation* t) {
+  t->setName(F("flush(routing) before begin() only loads it"));
   AD75019 cpSwitch(PCLK, SCLK, SIN, recordPinMode, recordWrite);
   AD75019Routing routing;
   routing.addRoute(6, 8);
-  uint8_t bytes[AD75019Routing::BYTES];
-  routing.getBytes(bytes);
   resetRecording();
-  cpSwitch.flush(bytes);
+  cpSwitch.flush(routing);
   t->verify(clocks == 0 && latches == 0, F("nothing should be sent"));
   t->verify(cpSwitch.isRouted(6, 8), F("the route should be loaded"));
 }
 
-void testNewRoutingUsesSwitchMapping(TestInvocation* t) {
-  t->setName(F("newRouting() has the mapping and no routes"));
+void testRoutingCopiesAreIndependent(TestInvocation* t) {
+  t->setName(F("A routing's copy is independent"));
+  AD75019Routing routing;
+  routing.addRoute(1, 2);
+  AD75019Routing copy = routing;
+  copy.addRoute(3, 4);
+  routing.clear();
+  t->verify(copy.isRouted(1, 2) && copy.isRouted(3, 4), F("the copy should keep its routes"));
+  t->verify(!routing.isRouted(1, 2) && !routing.isRouted(3, 4), F("the original should be clear"));
+}
+
+void testRoutingIgnoresBadPins(TestInvocation* t) {
+  t->setName(F("A routing ignores pins above 15"));
+  AD75019 cpSwitch(PCLK, SCLK, SIN, recordPinMode, recordWrite);
+  cpSwitch.begin();
+  AD75019Routing routing;
+  routing.addRoute(16, 0);
+  routing.addRoute(0, 16);
+  t->verify(!routing.isRouted(16, 0) && !routing.isRouted(0, 16), F("isRouted() should be false"));
+  resetRecording();
+  cpSwitch.flush(routing);
+  t->verify(countSet() == 0, F("nothing should be routed"));
+}
+
+void testRoutingUsesSwitchMapping(TestInvocation* t) {
+  t->setName(F("A routing uses the switch's pin mapping"));
   uint8_t xMapping[16] = {13, 15, 14, 8, 9, 10, 11, 0, 1, 2, 3, 4, 5, 6, 7, 12};
   uint8_t yMapping[16] = {4, 6, 5, 0, 1, 2, 3, 12, 13, 14, 15, 10, 9, 8, 11, 7};
   AD75019 cpSwitch(PCLK, SCLK, SIN, recordPinMode, recordWrite);
   cpSwitch.begin(xMapping, yMapping);
-  cpSwitch.addRoute(1, 1);
-  AD75019Routing routing = cpSwitch.newRouting();
-  t->verify(!routing.isRouted(1, 1), F("the switch's route shouldn't be copied"));
+  AD75019Routing routing;
   routing.addRoute(0, 0);
-  t->verify(!cpSwitch.isRouted(0, 0), F("the switch should be unchanged"));
-  uint8_t bytes[AD75019Routing::BYTES];
-  routing.getBytes(bytes);
   resetRecording();
-  cpSwitch.flush(bytes);
+  cpSwitch.flush(routing);
   t->verify(stream[streamIndex(13, 4)], F("physical X13-Y4 should be set"));
   t->verify(countSet() == 1, F("only one bit should be set"));
 }
 
-void testSwitchBytesMatchStream(TestInvocation* t) {
-  t->setName(F("getBytes() is what flush() sends"));
+void testBadMappingChangesNothing(TestInvocation* t) {
+  t->setName(F("A refused mapping keeps the old one"));
+  uint8_t reversed[16] = {15, 14, 13, 12, 11, 10, 9, 8, 7, 6, 5, 4, 3, 2, 1, 0};
+  uint8_t repeated[16] = {0, 0, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15};
+  t->verify(AD75019Routing::setPinMapping(reversed, reversed), F("reversed should be accepted"));
+  t->verify(!AD75019Routing::setPinMapping(IDENTITY, repeated), F("repeated should be refused"));
   AD75019 cpSwitch(PCLK, SCLK, SIN, recordPinMode, recordWrite);
   cpSwitch.begin();
-  cpSwitch.addRoute(4, 14);
-  cpSwitch.addRoute(10, 2);
-  uint8_t bytes[AD75019Routing::BYTES];
-  cpSwitch.getBytes(bytes);
+  AD75019Routing routing;
+  routing.addRoute(0, 0);
   resetRecording();
-  cpSwitch.flush();
-  t->verify(streamIs(bytes), F("the stream should be getBytes()"));
+  cpSwitch.flush(routing);
+  t->verify(stream[streamIndex(15, 15)], F("X0-Y0 should stay mapped to X15-Y15"));
 }
 
 int main() {
@@ -307,17 +269,16 @@ int main() {
     testClearRemovesRoutes,
     testRemappedPins,
     testBadMappingsRefused,
-    testRoutingBytesInSendOrder,
-    testRoutingBytesRoundTrip,
+    testRoutingIsCompact,
+    testFlushSendsRouting,
+    testFlushRoutingBeforeBeginOnlyLoads,
+    testRoutingCopiesAreIndependent,
     testRoutingIgnoresBadPins,
-    testBadMappingChangesNothing,
-    testFlushSendsBytes,
-    testFlushBytesBeforeBeginOnlyLoads,
-    testNewRoutingUsesSwitchMapping,
-    testSwitchBytesMatchStream
+    testRoutingUsesSwitchMapping,
+    testBadMappingChangesNothing
   };
 
-  runTestSuiteShowMem(tests);
+  runTestSuiteShowMem(tests, before);
 
   while (true) {}
   return 0;

@@ -54,8 +54,9 @@ class AD75019 {
     bool begin();
 
     /*
-     * Sets the pinModes and initializes using a custom X and Y pin mappings.
-     * Returns true if successful.
+     * Sets the pinModes and initializes using a custom X and Y pin mappings,
+     * which every AD75019Routing then uses too (see
+     * AD75019Routing::setPinMapping()). Returns true if successful.
      *
      * xPinMapping, yPinMapping - 16-element arrays with element values 
      *    between 0-15 containing no repeated values. The array elements
@@ -87,27 +88,12 @@ class AD75019 {
     void flush();
 
     /*
-     * Replaces the configuration buffer with bytes from
-     * AD75019Routing::getBytes() or getBytes(), then sends it; before
-     * begin(), only replaces it
+     * Replaces the configuration buffer with a routing, then sends it;
+     * before begin(), only replaces it
      *
-     * bytes - AD75019Routing::BYTES bytes
+     * routing - the routing, built with the current pin mapping
      */
-    void flush(const uint8_t bytes[AD75019Routing::BYTES]);
-
-    /*
-     * Copies the configuration buffer out as bytes, as
-     * AD75019Routing::getBytes() does
-     *
-     * bytes - gets AD75019Routing::BYTES bytes
-     */
-    void getBytes(uint8_t bytes[AD75019Routing::BYTES]) const;
-
-    /*
-     * Returns a routing with this switch's pin mapping and no routes, for
-     * building a configuration without changing the buffer
-     */
-    AD75019Routing newRouting() const;
+    void flush(const AD75019Routing& routing);
 
     /*
      * Resets the configuration buffer to all zeros (no connections)

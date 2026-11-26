@@ -16,17 +16,13 @@
 
 /*
  * A configuration for the AD75019's 256 crosspoints, built without the
- * chip: routes are added by X and Y pin (after applying any pin
- * re-mapping), and the result can be read as bytes, kept, and later
- * loaded back or sent with AD75019::flush(bytes).
- *
- * The bytes are in the order the chip is sent them: Y15 to Y0, each as
- * X15 to X8 then X7 to X0, most significant bit first.
- *
- * The bytes hold physical crosspoints, with the pin mapping applied, so a
- * routing meant for a switch with a pin mapping comes from
- * AD75019::newRouting(), which has the switch's mapping and no routes.
+ * chip and sent later with AD75019::flush(routing). It holds only the 256
+ * crosspoint bits, so routings can be worked out ahead of time and kept.
  * Copies are independent.
+ *
+ * The X and Y pin mapping is shared by every routing: it's set once, by
+ * setPinMapping() or AD75019::begin(xPinMapping, yPinMapping), for the
+ * board the chip is on.
  */
 class AD75019Routing {
 
@@ -35,23 +31,20 @@ class AD75019Routing {
     // X pins, and Y pins
     static const uint8_t PINS = 16;
 
-    // A routing's size in bytes: one bit per crosspoint
-    static const uint8_t BYTES = 32;
-
     /*
-     * A routing with no connections and the default X and Y pin mappings
+     * A routing with no connections
      */
     AD75019Routing();
 
     /*
-     * Re-maps the X and Y pins for routes added afterwards. Returns false,
-     * changing nothing, if either mapping is invalid.
+     * Re-maps the X and Y pins for every routing's routes added afterwards.
+     * Returns false, changing nothing, if either mapping is invalid.
      *
      * xPinMapping, yPinMapping - 16-element arrays with element values
      *    between 0-15 containing no repeated values. The array elements
      *    correspond to the actual X and Y pins on the AD75019.
      */
-    bool setPinMapping(const uint8_t xPinMapping[PINS], const uint8_t yPinMapping[PINS]);
+    static bool setPinMapping(const uint8_t xPinMapping[PINS], const uint8_t yPinMapping[PINS]);
 
     /*
      * Adds a route between the specified X and Y pins (after applying any
@@ -76,21 +69,6 @@ class AD75019Routing {
      */
     void clear();
 
-    /*
-     * Copies the routing out as bytes, in the order the chip is sent them
-     *
-     * bytes - gets BYTES bytes
-     */
-    void getBytes(uint8_t bytes[BYTES]) const;
-
-    /*
-     * Replaces the routes with bytes from getBytes(), keeping the pin
-     * mapping
-     *
-     * bytes - BYTES bytes
-     */
-    void setBytes(const uint8_t bytes[BYTES]);
-
   private:
 
     // AD75019 sends and prints the rows directly
@@ -99,10 +77,11 @@ class AD75019Routing {
     // Tells whether a mapping holds each pin 0-15 once
     static bool isValidMapping(const uint8_t pinMapping[PINS]);
 
-    uint8_t _xPinMapping[PINS] = {0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15};
-    uint8_t _yPinMapping[PINS] = {0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15};
+    static uint8_t _xPinMapping[PINS];
+    static uint8_t _yPinMapping[PINS];
 
-    // Y is the array index, X is the bit position (0 on the right)
+    // Y is the array index, X is the bit position (0 on the right), after
+    // the pin mapping
     uint16_t _rows[PINS] = {0};
 
 };
