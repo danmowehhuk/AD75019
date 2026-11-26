@@ -16,9 +16,9 @@ namespace AD75019Hal {
 
 using FlashStr = __FlashStringHelper;
 
-const uint8_t PIN_OUTPUT = OUTPUT;
-const uint8_t PIN_HIGH = HIGH;
-const uint8_t PIN_LOW = LOW;
+constexpr uint8_t PIN_OUTPUT = OUTPUT;
+constexpr uint8_t PIN_HIGH = HIGH;
+constexpr uint8_t PIN_LOW = LOW;
 
 inline void pinModeOutput(uint8_t pin) { pinMode(pin, OUTPUT); }
 inline void writePin(uint8_t pin, uint8_t value) { digitalWrite(pin, value); }
@@ -38,9 +38,9 @@ namespace AD75019Hal {
 
 using FlashStr = BareMetalHAL::FlashStr;
 
-const uint8_t PIN_OUTPUT = BareMetalHAL::OUTPUT;
-const uint8_t PIN_HIGH = BareMetalHAL::HIGH;
-const uint8_t PIN_LOW = BareMetalHAL::LOW;
+constexpr uint8_t PIN_OUTPUT = BareMetalHAL::OUTPUT;
+constexpr uint8_t PIN_HIGH = BareMetalHAL::HIGH;
+constexpr uint8_t PIN_LOW = BareMetalHAL::LOW;
 
 inline void pinModeOutput(uint8_t pin) { BareMetalHAL::pinMode(pin, BareMetalHAL::OUTPUT); }
 inline void writePin(uint8_t pin, uint8_t value) { BareMetalHAL::digitalWrite(pin, value); }

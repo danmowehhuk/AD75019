@@ -5,7 +5,7 @@
 // out.
 #include <BareMetalHAL.h>
 #include <TestTool.h>
-#include "../../src/AD75019.h"
+#include <AD75019.h>
 #include <avr/io.h>
 
 using namespace BareMetalHAL;
@@ -30,10 +30,10 @@ void recordWrite(uint8_t pinId, uint8_t value) {
   if (pinId == SIN) {
     sinLevel = value;
   } else if (pinId == SCLK) {
-    if (value && !sclkLevel && clocks < 256) {
-      stream[clocks] = sinLevel;
-    }
     if (value && !sclkLevel) {
+      if (clocks < 256) {
+        stream[clocks] = sinLevel;
+      }
       clocks++;
     }
     sclkLevel = value;
@@ -85,6 +85,9 @@ void testFlushOnRealPins(TestInvocation* t) {
   AD75019 cpSwitch(pin(Port::B, 4), pin(Port::B, 5), pin(Port::B, 6));
   cpSwitch.begin();
   cpSwitch.addRoute(15, 0);
+  // The opposite of where flush() leaves them, so it must drive both.
+  digitalWrite(pin(Port::B, 4), LOW);
+  digitalWrite(pin(Port::B, 5), HIGH);
   cpSwitch.flush();
   t->verify(PORTB & _BV(PB4), F("PCLK (PB4) should end high"));
   t->verify(!(PORTB & _BV(PB5)), F("SCLK (PB5) should end low"));

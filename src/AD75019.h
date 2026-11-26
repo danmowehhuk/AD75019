@@ -20,8 +20,9 @@ class AD75019 {
   public:
 
     /*
-     * AD75019 constructor that uses Arduino-provided functions for
-     * pinMode(pin, OUTPUT) and digitalWrite(pin, <value>)
+     * AD75019 constructor that uses the build's own pinMode(pin, OUTPUT)
+     * and digitalWrite(pin, <value>): Arduino's, or BareMetalHAL's with
+     * NO_ARDUINO, where pins are BareMetalHAL::pin(Port, bit) values
      *
      * pclkPinNumber - connect to PCLK on the AD75019
      * sclkPinNumber - connect to SCLK
@@ -85,7 +86,7 @@ class AD75019 {
     void clear();
 
     /*
-     * Serial.prints the configuration matrix
+     * Prints the configuration matrix to Serial (UART0 with NO_ARDUINO)
      */
     void print();
 

@@ -76,7 +76,7 @@ Built with `-DNO_ARDUINO -DHAL_AVR`, the library drives its pins and prints
 through [BareMetalHAL](https://github.com/danmowehhuk/BareMetalHAL) instead
 of the Arduino core. Pins are then `BareMetalHAL::pin(Port, bit)` values
 rather than Arduino pin numbers, and `print()` writes to UART0, which the
-caller begins first (`BareMetalHAL::Uart0::begin()`).
+caller begins first (`BareMetalHAL::Uart0::begin(baud)`).
 
 ```c
 #include <BareMetalHAL.h>
@@ -87,6 +87,8 @@ using namespace BareMetalHAL;
 AD75019 xptSwitch(pin(Port::B, 4), pin(Port::B, 5), pin(Port::B, 6));
 ```
 
-The bare-metal tests are in [test/test-suite-avr](test/test-suite-avr); build
-them with `./build.sh` (`-s` for SimulIDE) and run them with
-[test/AD75019Test.sim2](test/AD75019Test.sim2).
+The bare-metal tests are in [test/test-suite-avr](test/test-suite-avr), built
+for an ATmega2560 with `./build.sh` (`-s` for SimulIDE). It finds TestTool and
+BareMetalHAL under `~/Arduino/libraries` unless `TESTTOOL_SRC` or
+`BAREMETALHAL_SRC` points elsewhere. Load the `.sim.hex` into the Mega in
+[test/AD75019Test.sim2](test/AD75019Test.sim2) to run them.
