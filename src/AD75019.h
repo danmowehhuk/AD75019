@@ -12,6 +12,7 @@
 #ifndef AD75019_h
 #define AD75019_h
 
+#include <stddef.h>
 #include <stdint.h>
 
 class AD75019 {
