@@ -1,7 +1,7 @@
 // test/test-suite-avr/test-suite-avr.cpp
 //
-// Bare-metal AVR tests: the default callbacks drive real pins through
-// BareMetalHAL, and recording callbacks check the bit stream flush() shifts
+// Bare-metal AVR tests (NO_ARDUINO): callbacks around BareMetalHAL drive
+// real pins, and recording callbacks check the bit stream flush() shifts
 // out.
 #include <BareMetalHAL.h>
 #include <TestTool.h>
@@ -23,6 +23,14 @@ uint8_t pclkLevel = 0;
 uint16_t clocks = 0;
 uint8_t latches = 0;
 bool stream[256];
+
+void halPinMode(uint8_t pinId, uint8_t mode) {
+  pinMode(pinId, mode);
+}
+
+void halWrite(uint8_t pinId, uint8_t value) {
+  digitalWrite(pinId, value);
+}
 
 void recordPinMode(uint8_t, uint8_t) {}
 
@@ -71,7 +79,7 @@ uint16_t countSet() {
 
 void testBeginSetsPins(TestInvocation* t) {
   t->setName(F("begin() makes the pins outputs, PCLK high"));
-  AD75019 cpSwitch(pin(Port::B, 4), pin(Port::B, 5), pin(Port::B, 6));
+  AD75019 cpSwitch(pin(Port::B, 4), pin(Port::B, 5), pin(Port::B, 6), halPinMode, halWrite);
   t->verify(cpSwitch.begin(), F("begin() should succeed"));
   t->verify((DDRB & _BV(PB4)) && (DDRB & _BV(PB5)) && (DDRB & _BV(PB6)),
             F("PB4-PB6 should be outputs"));
@@ -82,7 +90,7 @@ void testBeginSetsPins(TestInvocation* t) {
 
 void testFlushOnRealPins(TestInvocation* t) {
   t->setName(F("flush() on real pins ends latched, clock low"));
-  AD75019 cpSwitch(pin(Port::B, 4), pin(Port::B, 5), pin(Port::B, 6));
+  AD75019 cpSwitch(pin(Port::B, 4), pin(Port::B, 5), pin(Port::B, 6), halPinMode, halWrite);
   cpSwitch.begin();
   cpSwitch.addRoute(15, 0);
   // The opposite of where flush() leaves them, so it must drive both.
@@ -158,13 +166,6 @@ void testBadMappingsRefused(TestInvocation* t) {
 int main() {
   BareMetalHAL::Uart0::begin(9600);
   BareMetalHAL::timingInit();
-
-  // print() writes to UART0; its matrix should show X0-Y4 and X4-Y3.
-  AD75019 shown(PCLK, SCLK, SIN, recordPinMode, recordWrite);
-  shown.begin();
-  shown.addRoute(0, 4);
-  shown.addRoute(4, 3);
-  shown.print();
 
   TestFunction tests[] = {
     testBeginSetsPins,

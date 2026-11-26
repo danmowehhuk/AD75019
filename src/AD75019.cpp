@@ -10,7 +10,19 @@
 */
 
 #include "AD75019.h"
-#include "hal/AD75019Hal.h"
+
+#ifndef NO_ARDUINO
+#include <Arduino.h>
+
+static const uint8_t PIN_OUTPUT = OUTPUT;
+static const uint8_t PIN_HIGH = HIGH;
+static const uint8_t PIN_LOW = LOW;
+#else
+// The values the callbacks are passed, as Arduino's OUTPUT, HIGH and LOW.
+static const uint8_t PIN_OUTPUT = 1;
+static const uint8_t PIN_HIGH = 1;
+static const uint8_t PIN_LOW = 0;
+#endif
 
 // Arduino's bitRead() and bitWrite(), which aren't available off Arduino.
 template <typename T>
@@ -27,12 +39,13 @@ static inline void writeBit(T& value, uint8_t bit, bool bitValue) {
   }
 }
 
+#ifndef NO_ARDUINO
 void _ad75019_pinModeDefault(uint8_t pinNumber, uint8_t /* unused */) {
-  AD75019Hal::pinModeOutput(pinNumber);
+  pinMode(pinNumber, OUTPUT);
 }
 
 void _ad75019_digitalWriteDefault(uint8_t pinNumber, uint8_t value) {
-  AD75019Hal::writePin(pinNumber, value);
+  digitalWrite(pinNumber, value);
 }
 
 AD75019::AD75019(uint8_t pclkPinNumber, uint8_t sclkPinNumber, uint8_t sinPinNumber):
@@ -40,6 +53,7 @@ AD75019::AD75019(uint8_t pclkPinNumber, uint8_t sclkPinNumber, uint8_t sinPinNum
   _pinModeCallback(_ad75019_pinModeDefault), _digitalWriteCallback(_ad75019_digitalWriteDefault) {
     setUseDefaultCallbacks(true);
  }
+#endif
 
 AD75019::AD75019(uint8_t pclkPinNumber, uint8_t sclkPinNumber, uint8_t sinPinNumber, 
           voidFuncCallback_t pinModeCallback, voidFuncCallback_t digitalWriteCallback):
@@ -48,12 +62,12 @@ AD75019::AD75019(uint8_t pclkPinNumber, uint8_t sclkPinNumber, uint8_t sinPinNum
 
 
 bool AD75019::begin() {
-    _pinModeCallback(_pclkPinNumber, AD75019Hal::PIN_OUTPUT);
-    _pinModeCallback(_sclkPinNumber, AD75019Hal::PIN_OUTPUT);
-    _pinModeCallback(_sinPinNumber, AD75019Hal::PIN_OUTPUT);
-    _digitalWriteCallback(_pclkPinNumber, AD75019Hal::PIN_HIGH);
-    _digitalWriteCallback(_sclkPinNumber, AD75019Hal::PIN_LOW);
-    _digitalWriteCallback(_sinPinNumber, AD75019Hal::PIN_LOW);
+    _pinModeCallback(_pclkPinNumber, PIN_OUTPUT);
+    _pinModeCallback(_sclkPinNumber, PIN_OUTPUT);
+    _pinModeCallback(_sinPinNumber, PIN_OUTPUT);
+    _digitalWriteCallback(_pclkPinNumber, PIN_HIGH);
+    _digitalWriteCallback(_sclkPinNumber, PIN_LOW);
+    _digitalWriteCallback(_sinPinNumber, PIN_LOW);
     setBegun(true);
     return true;
 }
@@ -103,12 +117,12 @@ void AD75019::flush() {
     for (int8_t x = 15; x > -1; x--) {
       _digitalWriteCallback(_sinPinNumber,
         readBit(_configBuffer[y], x));
-      _digitalWriteCallback(_sclkPinNumber, AD75019Hal::PIN_HIGH);
-      _digitalWriteCallback(_sclkPinNumber, AD75019Hal::PIN_LOW);
+      _digitalWriteCallback(_sclkPinNumber, PIN_HIGH);
+      _digitalWriteCallback(_sclkPinNumber, PIN_LOW);
     }
   }
-  _digitalWriteCallback(_pclkPinNumber, AD75019Hal::PIN_LOW);
-  _digitalWriteCallback(_pclkPinNumber, AD75019Hal::PIN_HIGH);
+  _digitalWriteCallback(_pclkPinNumber, PIN_LOW);
+  _digitalWriteCallback(_pclkPinNumber, PIN_HIGH);
 }
 
 void AD75019::clear() {
@@ -117,30 +131,32 @@ void AD75019::clear() {
   }
 }
 
+#ifndef NO_ARDUINO
 void AD75019::print() {
 	if (!isBegun()) {
-    AD75019Hal::println(F("AD75019 not initialized!"));
+    Serial.println(F("AD75019 not initialized!"));
   }
-  AD75019Hal::println(F("  X: 5432 1098 7654 3210"));
+  Serial.println(F("  X: 5432 1098 7654 3210"));
   for (int8_t y = 15; y > -1; y--) {
     if (y > 9) {
-      AD75019Hal::print(F("Y"));
-      AD75019Hal::print(y);
-      AD75019Hal::print(F(": "));
+      Serial.print(F("Y"));
+      Serial.print(y);
+      Serial.print(F(": "));
     } else {
-      AD75019Hal::print(F(" Y"));
-      AD75019Hal::print(y);
-      AD75019Hal::print(F(": "));
+      Serial.print(F(" Y"));
+      Serial.print(y);
+      Serial.print(F(": "));
     }
     for (int8_t x = 15; x > -1; x--) {
-      AD75019Hal::print(readBit(_configBuffer[y], x));
+      Serial.print(readBit(_configBuffer[y], x));
       if (x % 4 == 0) {
-        AD75019Hal::print(F(" "));
+        Serial.print(F(" "));
       }
     }
-    AD75019Hal::println();
+    Serial.println();
   }
 }
+#endif
 
 void AD75019::setBegun(bool b) {
 	writeBit(_state, 1, b);
