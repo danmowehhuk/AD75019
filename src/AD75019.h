@@ -14,6 +14,7 @@
 
 #include <stddef.h>
 #include <stdint.h>
+#include "AD75019Routing.h"
 
 class AD75019 {
 
@@ -86,6 +87,28 @@ class AD75019 {
     void flush();
 
     /*
+     * Replaces the configuration buffer with bytes from
+     * AD75019Routing::getBytes() or getBytes(), then sends it
+     *
+     * bytes - AD75019Routing::BYTES bytes
+     */
+    void flush(const uint8_t bytes[AD75019Routing::BYTES]);
+
+    /*
+     * Copies the configuration buffer out as bytes, as
+     * AD75019Routing::getBytes() does
+     *
+     * bytes - gets AD75019Routing::BYTES bytes
+     */
+    void getBytes(uint8_t bytes[AD75019Routing::BYTES]);
+
+    /*
+     * Returns a routing with this switch's pin mapping and no routes, for
+     * building a configuration without changing the buffer
+     */
+    AD75019Routing newRouting();
+
+    /*
      * Resets the configuration buffer to all zeros (no connections)
      */
     void clear();
@@ -121,11 +144,8 @@ class AD75019 {
     voidFuncCallback_t _pinModeCallback = NULL;
     voidFuncCallback_t _digitalWriteCallback = NULL;
     
-    uint8_t _xPinMapping[16] = {0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15};
-    uint8_t _yPinMapping[16] = {0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15};
-
-    // Y is the array index, X is the bit position (0 on the right)
-    uint16_t _configBuffer[16] = {0};
+    // The configuration buffer, with the pin mapping
+    AD75019Routing _routing;
 
 };
 

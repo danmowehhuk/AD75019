@@ -70,6 +70,25 @@ See the [remapping example](examples/remapped/remapped.ino) example for more
 details.
 
 
+## Building Routings Ahead of Time
+
+`AD75019Routing` builds a configuration without the chip, so it can be worked
+out ahead of time and kept as bytes. `newRouting()` returns one with the
+switch's pin mapping and no routes; `getBytes()` copies a configuration out
+(32 bytes, in the order the chip is sent them) and `flush(bytes)` sends one.
+
+```c
+AD75019Routing routing = xptSwitch.newRouting();
+routing.addRoute(0, 3);
+routing.addRoute(3, 4);
+
+uint8_t bytes[AD75019Routing::BYTES];
+routing.getBytes(bytes);  // keep these...
+
+xptSwitch.flush(bytes);   // ...and send them when needed
+```
+
+
 ## Without Arduino
 
 Built with `-DNO_ARDUINO`, the library needs nothing from the Arduino core or
