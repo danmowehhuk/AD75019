@@ -76,6 +76,11 @@ details.
 out ahead of time and kept as bytes. `newRouting()` returns one with the
 switch's pin mapping and no routes; `getBytes()` copies a configuration out
 (32 bytes, in the order the chip is sent them) and `flush(bytes)` sends one.
+The bytes hold physical crosspoints, with the pin mapping already applied, which
+is why a routing for a remapped switch comes from `newRouting()`.
+`flush(bytes)` replaces the switch's own configuration, so `addRoute()` and
+`isRouted()` then work on the loaded routes, and `setBytes()` loads bytes back
+into a routing.
 
 ```c
 AD75019Routing routing = xptSwitch.newRouting();

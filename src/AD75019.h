@@ -61,7 +61,7 @@ class AD75019 {
      *    between 0-15 containing no repeated values. The array elements
      *    correspond to the actual X and Y pins on the AD75019.
      */
-    bool begin(uint8_t xPinMapping[16], uint8_t yPinMapping[16]);
+    bool begin(const uint8_t xPinMapping[16], const uint8_t yPinMapping[16]);
 
     /*
      * Update the configuration buffer adding a route between the specified X 
@@ -88,7 +88,8 @@ class AD75019 {
 
     /*
      * Replaces the configuration buffer with bytes from
-     * AD75019Routing::getBytes() or getBytes(), then sends it
+     * AD75019Routing::getBytes() or getBytes(), then sends it; before
+     * begin(), only replaces it
      *
      * bytes - AD75019Routing::BYTES bytes
      */
@@ -100,13 +101,13 @@ class AD75019 {
      *
      * bytes - gets AD75019Routing::BYTES bytes
      */
-    void getBytes(uint8_t bytes[AD75019Routing::BYTES]);
+    void getBytes(uint8_t bytes[AD75019Routing::BYTES]) const;
 
     /*
      * Returns a routing with this switch's pin mapping and no routes, for
      * building a configuration without changing the buffer
      */
-    AD75019Routing newRouting();
+    AD75019Routing newRouting() const;
 
     /*
      * Resets the configuration buffer to all zeros (no connections)

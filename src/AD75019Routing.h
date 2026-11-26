@@ -4,7 +4,7 @@
 
   Library for the Analog Devices AD75019 Crosspoint Switch
 
-  Copyright (c) 2024, Dan Mowehhuk (danmowehhuk@gmail.com)
+  Copyright (c) 2026, Dan Mowehhuk (danmowehhuk@gmail.com)
   All rights reserved.
 
 */
@@ -23,12 +23,17 @@
  * The bytes are in the order the chip is sent them: Y15 to Y0, each as
  * X15 to X8 then X7 to X0, most significant bit first.
  *
- * Copies are independent; AD75019::newRouting() makes one with a switch's
- * pin mapping and no routes.
+ * The bytes hold physical crosspoints, with the pin mapping applied, so a
+ * routing meant for a switch with a pin mapping comes from
+ * AD75019::newRouting(), which has the switch's mapping and no routes.
+ * Copies are independent.
  */
 class AD75019Routing {
 
   public:
+
+    // X pins, and Y pins
+    static const uint8_t PINS = 16;
 
     // A routing's size in bytes: one bit per crosspoint
     static const uint8_t BYTES = 32;
@@ -46,7 +51,7 @@ class AD75019Routing {
      *    between 0-15 containing no repeated values. The array elements
      *    correspond to the actual X and Y pins on the AD75019.
      */
-    bool setPinMapping(const uint8_t xPinMapping[16], const uint8_t yPinMapping[16]);
+    bool setPinMapping(const uint8_t xPinMapping[PINS], const uint8_t yPinMapping[PINS]);
 
     /*
      * Adds a route between the specified X and Y pins (after applying any
@@ -88,14 +93,17 @@ class AD75019Routing {
 
   private:
 
-    // Tells whether a mapping holds each pin 0-15 once
-    static bool isValidMapping(const uint8_t pinMapping[16]);
+    // AD75019 sends and prints the rows directly
+    friend class AD75019;
 
-    uint8_t _xPinMapping[16] = {0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15};
-    uint8_t _yPinMapping[16] = {0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15};
+    // Tells whether a mapping holds each pin 0-15 once
+    static bool isValidMapping(const uint8_t pinMapping[PINS]);
+
+    uint8_t _xPinMapping[PINS] = {0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15};
+    uint8_t _yPinMapping[PINS] = {0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15};
 
     // Y is the array index, X is the bit position (0 on the right)
-    uint16_t _rows[16] = {0};
+    uint16_t _rows[PINS] = {0};
 
 };
 

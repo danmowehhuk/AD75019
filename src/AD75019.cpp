@@ -72,7 +72,7 @@ bool AD75019::begin() {
     return true;
 }
 
-bool AD75019::begin(uint8_t xPinMapping[16], uint8_t yPinMapping[16]) {
+bool AD75019::begin(const uint8_t xPinMapping[16], const uint8_t yPinMapping[16]) {
   bool begun = _routing.setPinMapping(xPinMapping, yPinMapping);
   if (begun) {
     begun = begin();
@@ -90,13 +90,14 @@ bool AD75019::isRouted(uint8_t x, uint8_t y) {
 
 void AD75019::flush() {
   if (isBegun()) {
-    uint8_t bytes[AD75019Routing::BYTES];
-    _routing.getBytes(bytes);
-    for (uint8_t i = 0; i < AD75019Routing::BYTES; i++) {
-      for (int8_t bit = 7; bit > -1; bit--) {
-        _digitalWriteCallback(_sinPinNumber, readBit(bytes[i], bit));
+    // Y15 to Y0, each X15 to X0, as AD75019Routing's bytes are ordered
+    for (int8_t y = AD75019Routing::PINS - 1; y > -1; y--) {
+      uint16_t row = _routing._rows[y];
+      for (uint8_t x = 0; x < AD75019Routing::PINS; x++) {
+        _digitalWriteCallback(_sinPinNumber, (row & 0x8000) ? PIN_HIGH : PIN_LOW);
         _digitalWriteCallback(_sclkPinNumber, PIN_HIGH);
         _digitalWriteCallback(_sclkPinNumber, PIN_LOW);
+        row <<= 1;
       }
     }
     _digitalWriteCallback(_pclkPinNumber, PIN_LOW);
@@ -109,11 +110,11 @@ void AD75019::flush(const uint8_t bytes[AD75019Routing::BYTES]) {
   flush();
 }
 
-void AD75019::getBytes(uint8_t bytes[AD75019Routing::BYTES]) {
+void AD75019::getBytes(uint8_t bytes[AD75019Routing::BYTES]) const {
   _routing.getBytes(bytes);
 }
 
-AD75019Routing AD75019::newRouting() {
+AD75019Routing AD75019::newRouting() const {
   AD75019Routing routing = _routing;
   routing.clear();
   return routing;
@@ -128,8 +129,6 @@ void AD75019::print() {
 	if (!isBegun()) {
     Serial.println(F("AD75019 not initialized!"));
   }
-  uint8_t bytes[AD75019Routing::BYTES];
-  _routing.getBytes(bytes);
   Serial.println(F("  X: 5432 1098 7654 3210"));
   for (int8_t y = 15; y > -1; y--) {
     if (y > 9) {
@@ -142,8 +141,7 @@ void AD75019::print() {
       Serial.print(F(": "));
     }
     for (int8_t x = 15; x > -1; x--) {
-      // Row y's bytes are at 2 * (15 - y): X15-X8, then X7-X0
-      Serial.print(readBit(bytes[(15 - y) * 2 + (x < 8 ? 1 : 0)], x % 8));
+      Serial.print(readBit(_routing._rows[y], x));
       if (x % 4 == 0) {
         Serial.print(F(" "));
       }

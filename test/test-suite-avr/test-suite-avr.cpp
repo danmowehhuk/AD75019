@@ -250,6 +250,19 @@ void testFlushSendsBytes(TestInvocation* t) {
   t->verify(!cpSwitch.isRouted(7, 7), F("the old route should be replaced"));
 }
 
+void testFlushBytesBeforeBeginOnlyLoads(TestInvocation* t) {
+  t->setName(F("flush(bytes) before begin() only loads them"));
+  AD75019 cpSwitch(PCLK, SCLK, SIN, recordPinMode, recordWrite);
+  AD75019Routing routing;
+  routing.addRoute(6, 8);
+  uint8_t bytes[AD75019Routing::BYTES];
+  routing.getBytes(bytes);
+  resetRecording();
+  cpSwitch.flush(bytes);
+  t->verify(clocks == 0 && latches == 0, F("nothing should be sent"));
+  t->verify(cpSwitch.isRouted(6, 8), F("the route should be loaded"));
+}
+
 void testNewRoutingUsesSwitchMapping(TestInvocation* t) {
   t->setName(F("newRouting() has the mapping and no routes"));
   uint8_t xMapping[16] = {13, 15, 14, 8, 9, 10, 11, 0, 1, 2, 3, 4, 5, 6, 7, 12};
@@ -299,6 +312,7 @@ int main() {
     testRoutingIgnoresBadPins,
     testBadMappingChangesNothing,
     testFlushSendsBytes,
+    testFlushBytesBeforeBeginOnlyLoads,
     testNewRoutingUsesSwitchMapping,
     testSwitchBytesMatchStream
   };

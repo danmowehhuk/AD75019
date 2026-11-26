@@ -4,18 +4,19 @@
 
   Library for the Analog Devices AD75019 Crosspoint Switch
 
-  Copyright (c) 2024, Dan Mowehhuk (danmowehhuk@gmail.com)
+  Copyright (c) 2026, Dan Mowehhuk (danmowehhuk@gmail.com)
   All rights reserved.
 
 */
 
 #include "AD75019Routing.h"
 
-static const uint8_t PINS = 16;
+const uint8_t AD75019Routing::PINS;
+const uint8_t AD75019Routing::BYTES;
 
 AD75019Routing::AD75019Routing() {}
 
-bool AD75019Routing::setPinMapping(const uint8_t xPinMapping[16], const uint8_t yPinMapping[16]) {
+bool AD75019Routing::setPinMapping(const uint8_t xPinMapping[PINS], const uint8_t yPinMapping[PINS]) {
   bool valid = isValidMapping(xPinMapping) && isValidMapping(yPinMapping);
   if (valid) {
     for (uint8_t i = 0; i < PINS; i++) {
@@ -61,12 +62,14 @@ void AD75019Routing::setBytes(const uint8_t bytes[BYTES]) {
   }
 }
 
-bool AD75019Routing::isValidMapping(const uint8_t pinMapping[16]) {
+bool AD75019Routing::isValidMapping(const uint8_t pinMapping[PINS]) {
   bool valid = true;
   uint16_t used = 0;
   for (uint8_t i = 0; valid && i < PINS; i++) {
     valid = pinMapping[i] < PINS && !((used >> pinMapping[i]) & 0x01);
-    used |= (1U << (pinMapping[i] & 0x0F));
+    if (valid) {
+      used |= (1U << pinMapping[i]);
+    }
   }
   return valid;
 }
