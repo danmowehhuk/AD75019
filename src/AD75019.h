@@ -12,28 +12,35 @@
 #ifndef AD75019_h
 #define AD75019_h
 
+#include <stddef.h>
 #include <stdint.h>
 
 class AD75019 {
 
   public:
 
+#ifndef NO_ARDUINO
     /*
      * AD75019 constructor that uses Arduino-provided functions for
-     * pinMode(pin, OUTPUT) and digitalWrite(pin, <value>)
+     * pinMode(pin, OUTPUT) and digitalWrite(pin, <value>). Not available
+     * with NO_ARDUINO, which needs the callback constructor.
      *
      * pclkPinNumber - connect to PCLK on the AD75019
      * sclkPinNumber - connect to SCLK
      * sinPinNumber  - connect to SIN
      */
     AD75019(uint8_t pclkPinNumber, uint8_t sclkPinNumber, uint8_t sinPinNumber);
+#endif
 
 
     /*
      * AD75019 constructor using custom callback functions to initialize
      * the pins and perform digital writes. These are necessary
      * when interacting with the device through a port expander such 
-     * as the MCP23017.
+     * as the MCP23017, or when building with NO_ARDUINO.
+     *
+     * The pinMode callback is passed 1 (Arduino's OUTPUT), and the
+     * digitalWrite callback 1 (HIGH) or 0 (LOW).
      */
     typedef void (*voidFuncCallback_t)(uint8_t i, uint8_t v);
     AD75019(uint8_t pclkPinNumber, uint8_t sclkPinNumber, uint8_t sinPinNumber, 
@@ -83,10 +90,13 @@ class AD75019 {
      */
     void clear();
 
+#ifndef NO_ARDUINO
     /*
-     * Serial.prints the configuration matrix
+     * Serial.prints the configuration matrix. Not available with
+     * NO_ARDUINO.
      */
     void print();
+#endif
 
   private:
     // Only parameterized constructors may be used

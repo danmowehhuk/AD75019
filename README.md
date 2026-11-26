@@ -68,3 +68,33 @@ method will return `false` and calling `flush()` will be disabled.
 
 See the [remapping example](examples/remapped/remapped.ino) example for more 
 details.
+
+
+## Without Arduino
+
+Built with `-DNO_ARDUINO`, the library needs nothing from the Arduino core or
+any other library. Use the callback constructor to say how pins are set up and
+written, and note that `print()` isn't available. For example, with
+[BareMetalHAL](https://github.com/danmowehhuk/BareMetalHAL):
+
+```c
+#include <BareMetalHAL.h>
+#include <AD75019.h>
+
+using namespace BareMetalHAL;
+
+void setOutput(uint8_t p, uint8_t mode) { pinMode(p, mode); }
+void writePin(uint8_t p, uint8_t value) { digitalWrite(p, value); }
+
+AD75019 xptSwitch(pin(Port::B, 4), pin(Port::B, 5), pin(Port::B, 6),
+                  setOutput, writePin);
+```
+
+The pinMode callback is passed 1 (Arduino's `OUTPUT`), and the digitalWrite
+callback 1 (`HIGH`) or 0 (`LOW`).
+
+The bare-metal tests are in [test/test-suite-avr](test/test-suite-avr), built
+for an ATmega2560 with `./build.sh` (`-s` for SimulIDE). They use TestTool and
+BareMetalHAL, found under `~/Arduino/libraries` unless `TESTTOOL_SRC` or
+`BAREMETALHAL_SRC` points elsewhere. Load the `.sim.hex` into the Mega in
+[test/AD75019Test.sim2](test/AD75019Test.sim2) to run them.

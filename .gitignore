@@ -1,3 +1,5 @@
 build/
 *.sublime-*
 .DS_Store
+.claudework/*
+!.claudework/.gitkeep
